@@ -1,0 +1,78 @@
+# Blocked Dependency — Minimal CI scenario
+# 1 project · 2 teams · 15 tasks · 2 milestones · 1 injected dependency failure
+# Target runtime: < 30 seconds with mock LLM
+
+name: blocked_dependency
+description: >
+  Minimal isolated scenario for fast CI validation. One project, two teams,
+  single dependency failure injection. Executes in under 30 seconds using mock LLM.
+version: "1.0"
+duration_days: 5
+
+# ---- Teams ----
+teams:
+  - id: team_core
+    name: Core Service Team
+    capacity: 4
+    skills: [backend, api]
+
+  - id: team_consumer
+    name: Consumer App Team
+    capacity: 3
+    skills: [frontend, mobile]
+
+# ---- Projects (1) ----
+projects:
+  - id: proj_demo_001
+    name: Demo Delivery Program
+    team: team_core
+    task_count: 15
+    milestones: [ms_demo_alpha, ms_demo_beta]
+    schedule_health: 0.68
+    open_blockers: 3
+    dependencies: []
+
+# ---- Milestones (2) ----
+milestones:
+  - id: ms_demo_alpha
+    project_id: proj_demo_001
+    name: Beta Release
+    due_days_from_start: 3
+    status: at_risk
+    risk_reason: open blockers not resolved
+
+  - id: ms_demo_beta
+    project_id: proj_demo_001
+    name: GA Release
+    due_days_from_start: 5
+    status: on_track
+
+# ---- Injected Failures (1) ----
+injected_failures:
+  - id: inj_demo_001
+    type: dependency_failure
+    trigger_day: 1
+    source_project: proj_demo_001
+    blocked_projects: []
+    blocked_task: task_api_integration
+    blocked_by_task: task_db_schema_freeze
+    description: >
+      Database schema freeze delayed by 2 days. API integration task
+      cannot proceed until schema is finalized.
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+    severity: 0.75
+
+# ---- Detection targets ----
+detection_targets:
+  issue_management:
+    precision: 0.85
+    false_positive_rate: 0.10
+  risk_intelligence:
+    precision: 0.80
+    recall: 0.70
+
+# ---- Fast-CI settings ----
+fast_ci: true
+max_runtime_seconds: 30
+llm_provider: mock

@@ -1,0 +1,25 @@
+# configs/tenants.yaml
+# Tenant configuration. Each tenant gets isolated state, policy, and graph data.
+
+version: "1.0"
+
+tenants:
+  default:
+    name: "Default Tenant"
+    description: "Single-tenant development and demo environment"
+    policy_file: "configs/policies.yaml"
+    sqlite_db_path: "${SQLITE_DB_PATH:-./data/autonomous_pmo.db}"
+    kuzu_db_path: "${KUZU_DB_PATH:-./data/knowledge_graph}"
+    integrations:
+      github_issues:
+        enabled: true
+        org: "${GITHUB_ORG:-}"
+        poll_interval_seconds: "${GITHUB_POLL_INTERVAL_SECONDS:-300}"
+      google_sheets:
+        enabled: false
+        spreadsheet_id: "${GOOGLE_SPREADSHEET_ID:-}"
+        sheet_range: "${GOOGLE_SHEET_RANGE:-Sheet1!A1:Z1000}"
+        poll_interval_seconds: "${GSHEETS_POLL_INTERVAL_SECONDS:-300}"
+    human_review:
+      default_sla_hours: 24
+      escalation_sla_hours: 4

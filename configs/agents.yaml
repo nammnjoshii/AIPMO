@@ -1,0 +1,64 @@
+# configs/agents.yaml
+# Agent skill registry. Every agent defined in agents/ must be registered here.
+# AgentRuntime.initialize() raises ValueError if any agent is missing from this file.
+
+version: "1.0"
+
+agents:
+  program_director_agent:
+    description: "Orchestration, conflict resolution, escalation routing"
+    decision_types: [observation, execution]
+    skills:
+      - event_routing
+      - conflict_arbitration
+      - escalation_routing
+      - multi_agent_merge
+
+  planning_agent:
+    description: "Roadmap generation, milestone planning, dependency analysis"
+    decision_types: [decision_preparation]
+    skills:
+      - wbs_generation
+      - dependency_mapping
+      - resource_need_estimation
+      - historical_project_similarity
+
+  execution_monitoring_agent:
+    description: "Progress tracking, variance detection, throughput analysis"
+    decision_types: [observation]
+    skills:
+      - schedule_variance_detection
+      - throughput_analysis
+      - bottleneck_detection
+
+  risk_intelligence_agent:
+    description: "Risk detection, impact estimation, mitigation recommendation"
+    decision_types: [observation, decision_preparation]
+    skills:
+      - risk_scoring
+      - risk_propagation_analysis
+      - mitigation_recommendation
+
+  issue_management_agent:
+    description: "Blocker detection, root cause classification"
+    decision_types: [observation, decision_preparation]
+    skills:
+      - blocker_classification
+      - root_cause_pattern_matching
+      - severity_estimation
+
+  communication_agent:
+    description: "Reporting, narrative synthesis, stakeholder-tailored briefs"
+    decision_types: [execution]
+    skills:
+      - executive_summary_generation
+      - stakeholder_personalization
+      - decision_preparation_brief
+
+  knowledge_agent:
+    description: "Lessons learned, heuristic improvement, pattern retrieval"
+    decision_types: [observation]
+    skills:
+      - lesson_extraction
+      - cross_project_lesson_retrieval
+      - mitigation_effectiveness_lookup

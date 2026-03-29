@@ -1,0 +1,51 @@
+# configs/policies.yaml
+# Default policy rules applied to all tenants unless overridden by project-level policy.
+# Policy outcomes: allow | allow_with_audit | approval_required | deny | escalate
+# Failure mode: fail closed — unknown actions default to deny.
+
+version: "1.0"
+scope: global
+
+# Default action permissions
+actions:
+  # Observation-tier (read-only)
+  read_canonical_state: allow
+  read_knowledge_graph: allow
+  query_historical_cases: allow
+
+  # Execution-tier (pre-approved, safe)
+  generate_status_report: allow
+  update_dashboard: allow
+  log_observation: allow_with_audit
+
+  # State writes (always audited)
+  create_risk_log_entry: allow_with_audit
+  update_health_score: allow_with_audit
+  append_decision_history: allow_with_audit
+  extract_lesson_learned: allow_with_audit
+  update_graph_entity: allow_with_audit
+
+  # Approval required
+  escalate_issue: approval_required
+  reassign_resources: approval_required
+  send_stakeholder_notification: approval_required
+
+  # Denied by default
+  modify_schedule: deny
+  delete_audit_record: deny
+  modify_policy: deny
+
+# Threshold-based auto-escalation
+thresholds:
+  schedule_slip_probability:
+    escalate_if_greater_than: 0.40
+  resource_overload:
+    notify_if_greater_than: 0.30
+  risk_score:
+    escalate_if_greater_than: 0.40
+    approval_required_if_greater_than: 0.20
+  confidence_score:
+    sparsity_alert_if_less_than: 0.50
+
+# Catch-all: any action not listed above defaults to deny
+unknown_action_default: deny

@@ -1,0 +1,63 @@
+# configs/models.yaml
+# Model routing per agent. Change provider: key to switch all agents at once.
+# Supported providers: ollama | groq | gemini | anthropic
+# Default: ollama (local, no API key, no cost)
+
+default_provider: ollama
+
+providers:
+  ollama:
+    base_url: "${OLLAMA_BASE_URL:-http://localhost:11434/v1}"
+    api_key: "ollama"
+    models:
+      complex: "llama3.3"
+      lightweight: "llama3.1:8b"
+
+  groq:
+    api_key: "${GROQ_API_KEY}"
+    models:
+      complex: "llama-3.3-70b-versatile"
+      lightweight: "llama-3.3-70b-versatile"
+
+  gemini:
+    api_key: "${GEMINI_API_KEY}"
+    models:
+      complex: "gemini-1.5-flash"
+      lightweight: "gemini-1.5-flash"
+
+  anthropic:
+    api_key: "${ANTHROPIC_API_KEY}"
+    models:
+      complex: "claude-sonnet-4-20250514"
+      lightweight: "claude-haiku-4-5-20251001"
+
+# Per-agent model assignment
+# tier: complex | lightweight
+agents:
+  program_director_agent:
+    tier: complex
+    reason: "Conflict resolution + orchestration — highest reasoning demand"
+
+  planning_agent:
+    tier: complex
+    reason: "Dependency reasoning + estimation — complex multi-step inference"
+
+  risk_intelligence_agent:
+    tier: complex
+    reason: "Multi-factor scoring — precision critical"
+
+  execution_monitoring_agent:
+    tier: lightweight
+    reason: "Pattern detection on structured data — speed over depth"
+
+  issue_management_agent:
+    tier: lightweight
+    reason: "Classification + root cause — moderate reasoning"
+
+  communication_agent:
+    tier: lightweight
+    reason: "High-volume structured narrative — speed over depth"
+
+  knowledge_agent:
+    tier: lightweight
+    reason: "Pattern retrieval + light reasoning"

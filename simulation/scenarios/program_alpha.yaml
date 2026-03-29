@@ -1,0 +1,289 @@
+# Program Alpha — Reference simulation scenario
+# 12 projects · 4 shared teams · 120 tasks · 8 milestones
+# Injected failures: 3 dependency failures, 1 capacity overload,
+#                   2 silent scope creep signals, 1 late-surfacing critical blocker
+
+name: program_alpha
+description: >
+  Multi-project program with shared team resources. Exercises all 7 injected failure
+  types across a realistic 12-project, 4-team delivery landscape.
+version: "1.0"
+duration_days: 30
+
+# ---- Teams ----
+teams:
+  - id: team_alpha
+    name: Platform Engineering
+    capacity: 8
+    skills: [backend, infrastructure, database]
+
+  - id: team_beta
+    name: Product Engineering
+    capacity: 7
+    skills: [frontend, api, mobile]
+
+  - id: team_gamma
+    name: Data & Analytics
+    capacity: 5
+    skills: [data_engineering, ml, reporting]
+
+  - id: team_delta
+    name: QA & Release
+    capacity: 4
+    skills: [testing, release_management, compliance]
+
+# ---- Projects (12) ----
+projects:
+  - id: proj_001
+    name: Core API v2
+    team: team_alpha
+    task_count: 12
+    milestones: [ms_001_alpha, ms_001_beta]
+    schedule_health: 0.82
+    open_blockers: 0
+    dependencies: []
+
+  - id: proj_002
+    name: Mobile Dashboard
+    team: team_beta
+    task_count: 10
+    milestones: [ms_002_alpha]
+    schedule_health: 0.75
+    open_blockers: 1
+    dependencies: [proj_001]
+
+  - id: proj_003
+    name: Data Pipeline Upgrade
+    team: team_gamma
+    task_count: 11
+    milestones: [ms_003_alpha, ms_003_beta]
+    schedule_health: 0.68
+    open_blockers: 2
+    dependencies: [proj_001]
+
+  - id: proj_004
+    name: Auth & SSO Integration
+    team: team_alpha
+    task_count: 8
+    milestones: [ms_004_alpha]
+    schedule_health: 0.90
+    open_blockers: 0
+    dependencies: []
+
+  - id: proj_005
+    name: Reporting Suite
+    team: team_gamma
+    task_count: 9
+    milestones: [ms_005_alpha]
+    schedule_health: 0.55
+    open_blockers: 3
+    dependencies: [proj_003]
+
+  - id: proj_006
+    name: Release Automation
+    team: team_delta
+    task_count: 7
+    milestones: [ms_006_alpha]
+    schedule_health: 0.72
+    open_blockers: 1
+    dependencies: [proj_004]
+
+  - id: proj_007
+    name: Customer Portal
+    team: team_beta
+    task_count: 14
+    milestones: [ms_007_alpha, ms_007_beta]
+    schedule_health: 0.61
+    open_blockers: 2
+    dependencies: [proj_002, proj_004]
+
+  - id: proj_008
+    name: Infrastructure Migration
+    team: team_alpha
+    task_count: 10
+    milestones: [ms_008_alpha]
+    schedule_health: 0.45
+    open_blockers: 4
+    dependencies: []
+
+  - id: proj_009
+    name: ML Feature Extraction
+    team: team_gamma
+    task_count: 8
+    milestones: [ms_009_alpha]
+    schedule_health: 0.78
+    open_blockers: 0
+    dependencies: [proj_003]
+
+  - id: proj_010
+    name: Compliance Audit Tooling
+    team: team_delta
+    task_count: 6
+    milestones: [ms_010_alpha]
+    schedule_health: 0.88
+    open_blockers: 0
+    dependencies: []
+
+  - id: proj_011
+    name: Notification Service
+    team: team_beta
+    task_count: 7
+    milestones: [ms_011_alpha]
+    schedule_health: 0.70
+    open_blockers: 1
+    dependencies: [proj_001, proj_002]
+
+  - id: proj_012
+    name: Search Indexer
+    team: team_gamma
+    task_count: 8
+    milestones: [ms_012_alpha]
+    schedule_health: 0.65
+    open_blockers: 2
+    dependencies: [proj_003, proj_009]
+
+# ---- Milestones (8) ----
+milestones:
+  - id: ms_001_alpha
+    project_id: proj_001
+    name: Core API v2 Alpha Release
+    due_days_from_start: 10
+    status: on_track
+
+  - id: ms_001_beta
+    project_id: proj_001
+    name: Core API v2 Beta Release
+    due_days_from_start: 22
+    status: on_track
+
+  - id: ms_002_alpha
+    project_id: proj_002
+    name: Mobile Dashboard v1
+    due_days_from_start: 14
+    status: at_risk
+    risk_reason: blocked on proj_001 API contracts
+
+  - id: ms_003_alpha
+    project_id: proj_003
+    name: Data Pipeline Phase 1
+    due_days_from_start: 12
+    status: at_risk
+    risk_reason: resource contention with team_gamma
+
+  - id: ms_003_beta
+    project_id: proj_003
+    name: Data Pipeline Phase 2
+    due_days_from_start: 25
+    status: on_track
+
+  - id: ms_005_alpha
+    project_id: proj_005
+    name: Reporting Suite MVP
+    due_days_from_start: 8
+    status: at_risk
+    risk_reason: 3 open blockers unresolved
+
+  - id: ms_007_alpha
+    project_id: proj_007
+    name: Customer Portal Beta
+    due_days_from_start: 18
+    status: at_risk
+    risk_reason: dependency on proj_002 and proj_004
+
+  - id: ms_008_alpha
+    project_id: proj_008
+    name: Infra Migration Checkpoint
+    due_days_from_start: 7
+    status: delayed
+    risk_reason: 4 open blockers, schedule_health critically low
+
+# ---- Injected Failures (7 total) ----
+injected_failures:
+
+  # Failure 1 — Dependency cascade: proj_001 blocking proj_002 and proj_011
+  - id: inj_001
+    type: dependency_failure
+    trigger_day: 3
+    source_project: proj_001
+    blocked_projects: [proj_002, proj_011]
+    description: Core API v2 auth endpoint delayed by database migration
+    expected_detection: risk_intelligence
+    expected_event_type: dependency.blocked
+
+  # Failure 2 — Dependency failure: proj_003 blocking proj_005 and proj_012
+  - id: inj_002
+    type: dependency_failure
+    trigger_day: 5
+    source_project: proj_003
+    blocked_projects: [proj_005, proj_012]
+    description: Data pipeline schema freeze delayed; downstream blocked
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+
+  # Failure 3 — Dependency failure: proj_004 blocking proj_006 and proj_007
+  - id: inj_003
+    type: dependency_failure
+    trigger_day: 8
+    source_project: proj_004
+    blocked_projects: [proj_006, proj_007]
+    description: SSO integration library version conflict
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+
+  # Failure 4 — Capacity overload: team_alpha assigned to proj_001, proj_004, proj_008 simultaneously
+  - id: inj_004
+    type: capacity_overload
+    trigger_day: 6
+    team_id: team_alpha
+    affected_projects: [proj_001, proj_004, proj_008]
+    overload_factor: 1.45
+    description: Team Alpha at 145% capacity; 3 critical projects competing for same engineers
+    expected_detection: execution_monitoring
+    expected_event_type: task.updated
+
+  # Failure 5 — Silent scope creep: proj_007 customer portal (low confidence signal)
+  - id: inj_005
+    type: scope_creep
+    trigger_day: 7
+    project_id: proj_007
+    description: >
+      New accessibility requirements added quietly — no formal change request.
+      Signal has low confidence (0.35) and no source acknowledgement.
+    signal_confidence: 0.35
+    expected_detection: risk_intelligence
+    expected_event_type: risk.detected
+
+  # Failure 6 — Silent scope creep: proj_009 ML feature extraction
+  - id: inj_006
+    type: scope_creep
+    trigger_day: 11
+    project_id: proj_009
+    description: >
+      Model retraining requirement surfaced in Slack but not in Jira.
+      Signal is sparse — only one mention, 36 hours old.
+    signal_confidence: 0.28
+    expected_detection: risk_intelligence
+    expected_event_type: risk.detected
+
+  # Failure 7 — Late-surfacing critical blocker: proj_008 infra migration
+  - id: inj_007
+    type: critical_blocker
+    trigger_day: 6
+    project_id: proj_008
+    task_id: infra_db_migration_task
+    description: >
+      Database migration script failures discovered during dry run.
+      Blocker hidden in internal tooling tickets — surfaces 6 days late.
+    severity: 0.85
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+
+# ---- Detection targets ----
+detection_targets:
+  risk_intelligence:
+    precision: 0.80
+    recall: 0.70
+    false_positive_rate: 0.15
+  issue_management:
+    precision: 0.85
+    false_positive_rate: 0.10

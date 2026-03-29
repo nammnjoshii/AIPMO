@@ -1,0 +1,61 @@
+# Core
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# Async
+aiosqlite>=0.19.0
+asyncio>=3.4.3
+
+# Database
+sqlalchemy[asyncio]>=2.0.0
+sqlite-vec>=0.1.0
+
+# Knowledge Graph
+kuzu>=0.4.0
+
+# LLM Providers
+openai>=1.0.0          # Used for Ollama (OpenAI-compatible) and direct OpenAI
+anthropic>=0.25.0      # Anthropic API (optional production upgrade)
+groq>=0.4.0            # Groq free tier
+google-generativeai>=0.5.0  # Gemini Flash (backup)
+
+# Embeddings (local, CPU, no API key)
+sentence-transformers>=2.6.0
+
+# Agent Orchestration
+langgraph>=0.1.0
+langchain-core>=0.1.0
+
+# Event Bus
+redis>=5.0.0
+
+# Scheduling
+apscheduler>=3.10.0
+
+# Integrations
+PyGithub>=2.1.0        # GitHub Issues + velocity (replaces Jira)
+google-api-python-client>=2.100.0  # Google Sheets (replaces Smartsheet)
+google-auth>=2.23.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.1.0
+
+# Auth (replaces Supabase)
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Web UI
+streamlit>=1.30.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-httpx>=0.28.0
+pytest-cov>=4.1.0
+
+# Utilities
+pyyaml>=6.0.1
+httpx>=0.25.0
+tenacity>=8.2.0         # Retry with exponential backoff
+
+# Config parsing
+typing-extensions>=4.8.0

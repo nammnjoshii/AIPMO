@@ -1,0 +1,15 @@
+{
+  "event_type": "dependency.blocked",
+  "project_id": "proj_demo_001",
+  "tenant_id": "default",
+  "source": "github_issues",
+  "timestamp": "2026-03-29T09:00:00Z",
+  "payload": {
+    "task_id": "task_42",
+    "new_status": "blocked",
+    "blocked_by": "external_api_v3",
+    "assignee": "alice@example.com",
+    "priority": "high",
+    "labels": ["status: blocked", "dependency: #87"]
+  }
+}

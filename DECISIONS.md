@@ -170,7 +170,7 @@ Track unresolved decisions here. Assign an owner and a resolution deadline.
 
 **Context:** When a threshold recalibration is less than 0.05 (e.g., adjusting the risk escalation threshold from 0.40 to 0.42), requiring human review may add friction without adding meaningful governance value.
 
-**Owner:** [Assign before Phase 2 starts]
+**Owner:** Platform Engineer (evaluation/calibration.py owner)
 **Resolution deadline:** Phase 2 kickoff
 **Options:**
 - A: Auto-apply changes below 0.05 delta — reduces operational friction
@@ -181,13 +181,13 @@ Track unresolved decisions here. Assign an owner and a resolution deadline.
 
 ---
 
-### OQ-002 — Neo4j local vs Amazon Neptune for Phase 2
+### OQ-002 — Kuzu (embedded) vs hosted graph DB for Phase 2
 
-**Context:** Phase 1 uses Neo4j locally via Docker. Phase 2 targets cloud deployment. Neptune is AWS-native and managed; Neo4j cloud has better tooling but additional cost.
+**Context:** Phase 1 uses Kuzu (embedded, file-based, no server) — this replaced Neo4j in the free stack. Phase 2 targets cloud/multi-tenant deployment where embedded Kuzu is unsuitable. Options are Neo4j (same Cypher syntax, drop-in swap), Amazon Neptune, or FalkorDB (Redis-based). Kuzu's Cypher compatibility means `query_service.py` requires zero rewrites regardless of which hosted backend is chosen.
 
-**Owner:** [Assign before Phase 2 starts]
+**Owner:** Integration Engineer (knowledge_graph/ owner)
 **Resolution deadline:** Phase 2 kickoff
-**Constraint:** The graph query interface (`knowledge_graph/query_service.py`) must be the same regardless of backend — abstraction layer required before Phase 2.
+**Constraint:** The graph query interface (`knowledge_graph/query_service.py`) must remain the abstraction boundary — backend swap must not require changes outside `knowledge_graph/graph_store.py`.
 
 **Status:** open
 
@@ -197,9 +197,26 @@ Track unresolved decisions here. Assign an owner and a resolution deadline.
 
 **Context:** README.md specifies configurable monthly spend caps. Should exceeding the cap hard-stop agent invocations or trigger a soft alert and downgrade to a cheaper model?
 
-**Owner:** [Assign before Phase 3 starts]
+**Owner:** Backend Lead (orchestrator/runtime.py + llm/provider.py owner)
 **Resolution deadline:** Phase 3 kickoff
 **Preference:** Hard cap is safer for enterprise cost control. Soft alert with automatic model downgrade is better for availability.
+
+**Status:** open
+
+---
+
+### OQ-004 — LangGraph async parallelism: should parallel agent nodes run concurrently?
+
+**Context:** The orchestrator's parallel coordination pattern (e.g., `dependency.blocked` → [Issue Management + Execution Monitoring] simultaneously) currently dispatches agents sequentially within the LangGraph graph despite being logically parallel. LangGraph supports async node execution — enabling it would reduce end-to-end latency for parallel patterns but adds complexity in state merging and error handling.
+
+**Owner:** Backend Lead (orchestrator/main.py + orchestrator/event_router.py owner)
+**Resolution deadline:** Phase 2 kickoff
+**Options:**
+- A: Keep sequential dispatch — simpler, predictable, sufficient for Phase 1 event volume
+- B: Enable async parallel execution for explicitly parallel patterns — reduces latency, requires careful state merge and exception isolation per branch
+- C: Async with timeout per branch — parallel execution with a per-agent wall-clock limit, falls back to sequential on timeout
+
+**Constraint:** Any async implementation must preserve the guarantee that `log_audit` executes for every node traversal, including partial failures in a parallel branch.
 
 **Status:** open
 
@@ -214,3 +231,10 @@ YYYY-MM-DD | Phase X | [What was built] | [Any decisions made or questions opene
 ```
 
 2026-03-25 | Phase 0 | Project initialized, all foundational decisions recorded | OQ-001, OQ-002, OQ-003 opened
+2026-03-29 | Phase 0–1 | Scaffold created (30+ dirs), requirements.txt, .env.example, docker-compose.yml (Redis only), all configs/ YAML; data contracts defined: state/schemas.py, events/schemas/, agents/base_agent.py, knowledge_graph/graph_schema.py, policy/schemas.py, llm/provider.py (4 providers), llm/mock_client.py; test_contracts.py all green | ValueError enforcement on empty uncertainty_notes confirmed
+2026-03-29 | Phase 2–3 | Infrastructure services complete: canonical state (SQLite+aiosqlite+WAL), signal quality pipeline (noise filter, confidence decay, missing data, source profiles), Redis event producer/consumer with consumer groups; policy engine (fail-closed, YAML-configured, 5 outcomes, CLI validate); audit/logger.py (append-only, no update/delete methods) | Policy crash → DENY proven by test
+2026-03-29 | Phase 4–5 | Context assembly layer complete: StateSlicer (event-scoped slices), GraphNeighborhoodFetcher (graceful fallback), CaseMatcher (sqlite-vec embeddings), ContextAssembler (cross-project isolation enforced); security layer: rbac.py, isolation.py, secrets.py, auth.py (FastAPI JWT replacing Supabase); audit/retention.py (archive not delete) | Program Director gets 3-hop graph context, all others 2-hop
+2026-03-29 | Phase 6 | All 7 agents implemented against prompt templates: ExecutionMonitoring (observation only), IssueManagement (severity threshold 0.70), RiskIntelligence (probability×impact, no rounding, thresholds at 0.20/0.40), Communication (always EXECUTION+ALLOW, banned phrases enforced), Knowledge (project isolation in retrieval), Planning (range estimates, assumption-based label), ProgramDirector (most-restrictive policy merge, conflict arbitration); 35+ unit tests green; AST cross-import boundary test passing | Health score capped at 0.75 when signal confidence < 0.5
+2026-03-29 | Phase 7–8 | Orchestrator complete: conflict_resolver.py, event_router.py (5 coordination patterns), runtime.py, main.py (7-node LangGraph with DENY short-circuit), human_review_queue.py (SLA fields + audit on approve/reject); integration adapters complete: GitHub Issues (replaces Jira), Google Sheets (replaces Smartsheet), GitHub velocity, FastAPI JWT auth; examples/run_sample_event.py validated | DENY path skips execute_or_queue, log_audit always runs
+2026-03-29 | Phase 9–10 | Simulation harness complete: program_alpha.yaml (12 projects, 4 teams, 120 tasks), blocked_dependency.yaml, failure_injector.py (4 injection methods), harness.py with precision/recall evaluation; knowledge graph complete: KuzuGraphStore (embedded, no Docker, no server), query_service.py (7 Cypher methods), entity_extractor.py (no TASK nodes), relationship_builder.py, graph_sync.py; graph_neighborhood.py stub replaced with live Kuzu queries + graceful fallback | Kuzu uses identical Cypher syntax to Neo4j — zero query rewrites required
+2026-03-29 | Phase 11–12 | Evaluation framework complete: metrics.py (8 metrics, CLI --report), labeling.py (over-trust detection at 95% acceptance rate), calibration.py (recommendations only, never auto-applies — OQ-001 still open); Streamlit UI complete: Portfolio Health (color-coded, 60s refresh), Decision Queue (approve/reject), Risk Feed (confidence badges), Explainability Panel (evidence + uncertainty_notes); final audit pass: 0 findings across 5 audit categories; full test suite 307 passing, 0 skipped | OQ-004 opened for LangGraph async parallelism settings

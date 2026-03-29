@@ -1,0 +1,98 @@
+version: "3.9"
+
+# Autonomous PMO — Docker Compose
+# Phase 1:  Redis only (event bus for Redis Streams)
+# Phase 2+: Kafka + Zookeeper (enterprise event bus — replaces Redis Streams)
+#
+# Phase 1 (default):   docker compose up -d redis
+# Phase 2 (Kafka):     docker compose --profile kafka up -d
+# All services:        docker compose --profile kafka up -d
+#
+# SQLite and Kuzu are file-based (no server, no container needed).
+
+services:
+
+  # ---- Phase 1: Redis (event bus + dedup cache) ----
+  redis:
+    image: redis:7-alpine
+    container_name: autonomous_pmo_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---- Phase 2+: Kafka (enterprise event bus) ----
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: autonomous_pmo_zookeeper
+    profiles: ["kafka"]
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | nc localhost 2181 | grep imok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: autonomous_pmo_kafka
+    profiles: ["kafka"]
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    ports:
+      - "9092:9092"       # internal broker (app → Kafka)
+      - "9093:9093"       # external/host access
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # Two listeners: PLAINTEXT for container-internal, EXTERNAL for host access
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      # Topic defaults — pmo.events.* topics created automatically on first publish
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 4             # 4 partitions per topic by default
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      # Log retention (72h — allows replay of recent events)
+      KAFKA_LOG_RETENTION_HOURS: 72
+      KAFKA_LOG_SEGMENT_BYTES: 104857600  # 100MB segments
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # JVM heap
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test:
+        - "CMD"
+        - "kafka-broker-api-versions"
+        - "--bootstrap-server"
+        - "localhost:9092"
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka_data:

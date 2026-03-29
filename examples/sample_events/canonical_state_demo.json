@@ -1,0 +1,49 @@
+{
+  "project_id": "proj_demo_001",
+  "identity": {
+    "project_id": "proj_demo_001",
+    "name": "Demo Project Alpha",
+    "tenant_id": "default",
+    "owner": "alice@example.com",
+    "program_id": "prog_001"
+  },
+  "health": {
+    "schedule_health": 0.68,
+    "resource_health": 0.80,
+    "scope_health": 0.90,
+    "dependency_health": 0.55,
+    "overall_health": 0.68,
+    "open_blockers": 3,
+    "tasks_completed": 47,
+    "tasks_total": 120
+  },
+  "milestones": [
+    {
+      "milestone_id": "ms_001",
+      "name": "Beta Release",
+      "due_date": "2026-04-15T00:00:00Z",
+      "status": "at_risk",
+      "completion_percentage": 0.62
+    },
+    {
+      "milestone_id": "ms_002",
+      "name": "GA Release",
+      "due_date": "2026-05-30T00:00:00Z",
+      "status": "on_track",
+      "completion_percentage": 0.30
+    }
+  ],
+  "source_profiles": {
+    "github_issues": {
+      "source_name": "github_issues",
+      "reliability_score": "high",
+      "inaccuracy_count": 0
+    },
+    "jira": {
+      "source_name": "jira",
+      "reliability_score": "medium",
+      "inaccuracy_count": 2
+    }
+  },
+  "last_updated": "2026-03-29T08:30:00Z"
+}

@@ -16,8 +16,9 @@ Production upgrade paths noted where relevant.
 | Knowledge graph | Neo4j (paid cloud) | Kuzu (embedded, free) | Low |
 | Auth + user management | Supabase (free tier limited) | Built-in FastAPI JWT | Low |
 | Slack integration | Slack API (free tier limited) | Discord API (free) or skip for Phase 1 | Low |
+| PostgreSQL + pgvector | Relational + vector DB | **SQLite + sqlite-vec** (embedded, file-based) | Low |
 
-**Infrastructure stays the same — PostgreSQL, Redis, Docker are all free and open source.**
+**Total infrastructure: Docker runs Redis only. SQLite and Kuzu are both file-based — no DB servers, no ports, no Docker containers for data.**
 
 ---
 
@@ -356,10 +357,10 @@ OLLAMA_MODEL=llama3.1:8b
 # LLM_PROVIDER=anthropic
 # ANTHROPIC_API_KEY=sk-ant-...
 
-# Infrastructure (all free, self-hosted)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/autonomous_pmo
-REDIS_URL=redis://localhost:6379
-KUZU_DB_PATH=./data/knowledge_graph
+# Infrastructure (all free, all embedded except Redis)
+SQLITE_DB_PATH=./data/autonomous_pmo.db    # SQLite — file created automatically
+REDIS_URL=redis://localhost:6379            # Only service that needs Docker
+KUZU_DB_PATH=./data/knowledge_graph        # Kuzu — directory created automatically
 
 # Project data sources (all free)
 GITHUB_TOKEN=ghp_...           # github.com → Settings → Developer settings
@@ -475,6 +476,56 @@ Every agent calls `get_client()` and `get_model_for_agent(self.name)` — never 
 | Integration testing | Ollama or Groq free tier | GitHub Issues | Kuzu embedded |
 | Demo to potential clients | Groq free tier or Gemini Flash | GitHub Issues + Google Sheets | Kuzu embedded |
 | Production (Phase 2+) | Claude Haiku / Sonnet mix | Jira + Smartsheet + GitHub | Neo4j or Neptune |
+
+---
+
+### 7. PostgreSQL — Replace with SQLite + sqlite-vec
+
+SQLite is an embedded, file-based database — no server, no Docker container, no connection string beyond a file path. It stores the entire database in a single `.db` file.
+
+```bash
+pip install aiosqlite sqlite-vec sentence-transformers
+```
+
+**Canonical state, audit log, evaluation metrics, human review queue** all move to SQLite. SQLAlchemy supports SQLite with the same ORM models — change the connection string only.
+
+```python
+# state/canonical_state.py
+DATABASE_URL = os.environ.get("SQLITE_DB_PATH", "./data/autonomous_pmo.db")
+engine = create_async_engine(f"sqlite+aiosqlite:///{DATABASE_URL}")
+
+# Enable WAL mode for concurrent reads
+async with engine.begin() as conn:
+    await conn.execute(text("PRAGMA journal_mode=WAL"))
+```
+
+**Vector similarity (replaces pgvector):** `sqlite-vec` adds a virtual table type to SQLite with cosine distance support. Embeddings generated locally by `sentence-transformers` — no API call.
+
+```python
+# context_assembly/case_matcher.py
+import sqlite_vec
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer("all-MiniLM-L6-v2")  # ~80MB, runs on CPU, free
+
+# Create virtual table
+conn.execute("CREATE VIRTUAL TABLE IF NOT EXISTS vec_cases USING vec0(embedding FLOAT32[384])")
+
+# Query top-k similar cases
+embedding = model.encode(event_text).tolist()
+results = conn.execute("""
+    SELECT case_id, vec_distance_cosine(embedding, ?) AS distance
+    FROM vec_cases
+    ORDER BY distance
+    LIMIT ?
+""", (embedding, top_k)).fetchall()
+```
+
+**Append-only audit log:** SQLite doesn't support DB-level role permissions. Enforce at the application layer — `AuditLogger` exposes only `log()` and `query()`, no update or delete methods.
+
+**Database file location:** `./data/autonomous_pmo.db` (configured via `SQLITE_DB_PATH` env var). Created automatically on first run — no migration scripts needed.
+
+**Production upgrade path:** For Phase 2+ multi-user or high-throughput deployments, migrate canonical state to PostgreSQL while keeping SQLite for audit logs and evaluation metrics (they're append-heavy and read rarely, ideal for SQLite long-term).
 
 ---
 

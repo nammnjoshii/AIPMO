@@ -1,0 +1,1056 @@
+# Fraser Health Authority — 30-Day Autonomous PMO Simulation
+# Organization: Fraser Health Authority, British Columbia, Canada
+# Scope: Digital Health & Clinical Systems Transformation Portfolio
+# Simulation period: Day 1–30 (simulates February 2026, fiscal Q4)
+#
+# Fraser Health is BC's largest health authority, serving 1.9M people
+# across 12 acute care hospitals, 8,500+ staff.
+#
+# This scenario exercises the PMO platform across all 4 user tiers:
+#   - Project Coordinator (Sarah Chen, Digital Health)
+#   - Project Manager (Raj Patel, Clinical Systems)
+#   - Senior Project Manager (Dr. Linda Morrison, Infrastructure)
+#   - Director of Project Management (Michael Okafor, Digital Transformation Office)
+#
+# Regulation context: BC FOIPPA, Canadian Patient Data Protection Act,
+#                    Health Canada Digital Health Standards
+#
+# 15 projects · 5 clinical teams · 180 tasks · 14 milestones
+# Injected failures: 4 dependency cascades, 2 capacity overloads,
+#                   3 silent compliance signals, 2 critical patient-safety blockers,
+#                   1 late-surfacing vendor failure
+
+name: fraser_health_30day
+description: >
+  Fraser Health Authority 30-day Digital Transformation portfolio simulation.
+  Models realistic BC public sector healthcare IT delivery with patient safety
+  constraints, FOIPPA compliance requirements, cross-team resource contention,
+  and vendor dependency risks across 5 clinical IT teams.
+version: "1.0"
+duration_days: 30
+fast_ci: false
+max_runtime_seconds: 300
+
+tenant_id: fraser_health
+organization: Fraser Health Authority
+jurisdiction: British Columbia, Canada
+portfolio: Digital Health Transformation Q4-FY2026
+
+# ---- User Personas ----
+# These personas represent the four access tiers. The PMO platform
+# must serve each with appropriately scoped context and decision briefs.
+user_personas:
+  - id: user_sarah_chen
+    name: Sarah Chen
+    role: project_coordinator
+    team: team_digital_health
+    projects: [proj_fh_001, proj_fh_002]
+    typical_interactions:
+      - task_status_updates
+      - blocker_escalation
+      - progress_reporting
+    rbac_role: team_member
+
+  - id: user_raj_patel
+    name: Raj Patel
+    role: project_manager
+    team: team_clinical_systems
+    projects: [proj_fh_003, proj_fh_004, proj_fh_005]
+    typical_interactions:
+      - risk_review_and_approval
+      - resource_reallocation_requests
+      - decision_preparation_review
+    rbac_role: project_manager
+
+  - id: user_dr_morrison
+    name: Dr. Linda Morrison
+    role: senior_project_manager
+    team: team_infrastructure
+    projects: [proj_fh_006, proj_fh_007, proj_fh_008, proj_fh_009]
+    typical_interactions:
+      - cross_project_dependency_arbitration
+      - escalation_approval
+      - milestone_scope_decisions
+    rbac_role: senior_pm
+
+  - id: user_michael_okafor
+    name: Michael Okafor
+    role: director_project_management
+    team: team_program_office
+    projects: [all]
+    typical_interactions:
+      - portfolio_health_review
+      - executive_brief_approval
+      - vendor_issue_escalation
+      - compliance_decision_review
+    rbac_role: program_director
+
+# ---- Clinical IT Teams ----
+teams:
+  - id: team_digital_health
+    name: Digital Health Integration Team
+    capacity: 6
+    skills: [hl7_fhir, patient_data_integration, api_development, interoperability]
+    lead: sarah_chen
+    budget_remaining_cad: 280000
+
+  - id: team_clinical_systems
+    name: Clinical Systems Team
+    capacity: 8
+    skills: [epic_ehr, pharmacy_systems, clinical_decision_support, database]
+    lead: raj_patel
+    budget_remaining_cad: 620000
+
+  - id: team_infrastructure
+    name: Healthcare Infrastructure Team
+    capacity: 7
+    skills: [network, security, cloud_migration, hipaa_controls, endpoint_mgmt]
+    lead: dr_morrison
+    budget_remaining_cad: 890000
+
+  - id: team_data_analytics
+    name: Health Data & Analytics Team
+    capacity: 5
+    skills: [health_data_warehouse, powerbi, population_health, bc_cancer_reporting]
+    lead: priya_nair
+    budget_remaining_cad: 175000
+
+  - id: team_program_office
+    name: Digital Transformation Program Office
+    capacity: 4
+    skills: [portfolio_management, vendor_management, foippa_compliance, change_management]
+    lead: michael_okafor
+    budget_remaining_cad: 95000
+
+# ---- Projects (15) ----
+projects:
+  # --- Digital Health Integration ---
+  - id: proj_fh_001
+    name: FHIR R4 Patient Record API
+    description: >
+      Expose Fraser Health patient records via HL7 FHIR R4 standard.
+      Required by BC Ministry of Health mandate by March 31, 2026.
+      All downstream patient portal and mobile apps depend on this API.
+    team: team_digital_health
+    task_count: 14
+    milestones: [ms_fh_001_a, ms_fh_001_b]
+    schedule_health: 0.71
+    open_blockers: 2
+    dependencies: []
+    regulatory_mandate: true
+    mandate_deadline_day: 30
+    budget_cad: 180000
+    risk_flags: [patient_data_exposure, bcfoippa_scope]
+
+  - id: proj_fh_002
+    name: Patient Portal — MyHealth FH
+    description: >
+      Patient-facing web and mobile portal. Integration with FHIR API (proj_fh_001),
+      BC Services Card authentication, and pharmacy refill via PharmaNet.
+    team: team_digital_health
+    task_count: 16
+    milestones: [ms_fh_002_a, ms_fh_002_b]
+    schedule_health: 0.58
+    open_blockers: 3
+    dependencies: [proj_fh_001, proj_fh_010]
+    budget_cad: 250000
+
+  # --- Clinical Systems ---
+  - id: proj_fh_003
+    name: Epic EHR Phase 3 — Pharmacy Integration
+    description: >
+      Epic EHR upgrade to enable bidirectional pharmacy workflow with PharmaNet BC.
+      Patient safety critical. Requires Health Canada approval for medication alerts.
+    team: team_clinical_systems
+    task_count: 18
+    milestones: [ms_fh_003_a, ms_fh_003_b, ms_fh_003_c]
+    schedule_health: 0.64
+    open_blockers: 2
+    dependencies: []
+    patient_safety: true
+    budget_cad: 490000
+
+  - id: proj_fh_004
+    name: Clinical Decision Support — Sepsis Alerts
+    description: >
+      AI-assisted sepsis early warning integrated into Epic EHR nurse workstations.
+      Requires validation study completion and physician champion sign-off before go-live.
+    team: team_clinical_systems
+    task_count: 12
+    milestones: [ms_fh_004_a]
+    schedule_health: 0.82
+    open_blockers: 0
+    dependencies: [proj_fh_003]
+    patient_safety: true
+    budget_cad: 310000
+
+  - id: proj_fh_005
+    name: Diagnostic Imaging — PACS Upgrade
+    description: >
+      Picture Archiving and Communications System upgrade across 5 acute sites.
+      Vendor: Sectra AB (Sweden). Contract clause: all upgrades within fiscal year.
+    team: team_clinical_systems
+    task_count: 11
+    milestones: [ms_fh_005_a, ms_fh_005_b]
+    schedule_health: 0.49
+    open_blockers: 4
+    dependencies: []
+    vendor: Sectra_AB
+    budget_cad: 720000
+
+  # --- Infrastructure ---
+  - id: proj_fh_006
+    name: Azure Cloud Migration — Clinical Workloads
+    description: >
+      Migrate 40 clinical application servers from on-premise Surrey Memorial
+      data centre to Azure Canada East (Toronto). FOIPPA requires data residency
+      in Canada. Health authority board approved in January 2026.
+    team: team_infrastructure
+    task_count: 22
+    milestones: [ms_fh_006_a, ms_fh_006_b]
+    schedule_health: 0.67
+    open_blockers: 3
+    dependencies: [proj_fh_010]
+    foippa_compliant: true
+    budget_cad: 1100000
+
+  - id: proj_fh_007
+    name: Zero Trust Network Refresh — Abbotsford Regional
+    description: >
+      Network segmentation and Zero Trust architecture rollout at Abbotsford
+      Regional Hospital. Required following 2025 Medibank-style threat assessment
+      commissioned by BC Ministry of Health.
+    team: team_infrastructure
+    task_count: 14
+    milestones: [ms_fh_007_a]
+    schedule_health: 0.75
+    open_blockers: 1
+    dependencies: []
+    security_critical: true
+    budget_cad: 680000
+
+  - id: proj_fh_008
+    name: Telehealth Platform — Virtual Care Expansion
+    description: >
+      Expand BC Virtual Care (powered by Zoom Healthcare HIPAA) to 8 additional
+      Fraser Health clinics. Requires clinical workflow redesign and staff training.
+    team: team_infrastructure
+    task_count: 10
+    milestones: [ms_fh_008_a]
+    schedule_health: 0.88
+    open_blockers: 0
+    dependencies: [proj_fh_010]
+    budget_cad: 195000
+
+  - id: proj_fh_009
+    name: Medical Device Connectivity — Langley Memorial
+    description: >
+      Connect 200 bedside monitoring devices (Philips) to central clinical data
+      repository at Langley Memorial Hospital. Philips HL7v2 adapter required.
+    team: team_infrastructure
+    task_count: 9
+    milestones: [ms_fh_009_a]
+    schedule_health: 0.72
+    open_blockers: 1
+    dependencies: [proj_fh_001]
+    vendor: Philips_Healthcare
+    budget_cad: 340000
+
+  # --- Data & Analytics ---
+  - id: proj_fh_010
+    name: Health Data Platform — Foundation Layer
+    description: >
+      Azure-based health data lakehouse. Feeds population health dashboards,
+      cancer screening analytics, and COVID/respiratory surveillance.
+      Blocks 4 downstream projects. Teams depend on this for dev environments.
+    team: team_data_analytics
+    task_count: 16
+    milestones: [ms_fh_010_a, ms_fh_010_b]
+    schedule_health: 0.61
+    open_blockers: 3
+    dependencies: []
+    budget_cad: 430000
+
+  - id: proj_fh_011
+    name: Population Health Dashboard — BC Cancer Integration
+    description: >
+      Real-time cancer screening rates dashboard for Fraser Health Medical Officers.
+      Integrates BC Cancer Registry API (quarterly data feed).
+    team: team_data_analytics
+    task_count: 8
+    milestones: [ms_fh_011_a]
+    schedule_health: 0.79
+    open_blockers: 0
+    dependencies: [proj_fh_010]
+    budget_cad: 145000
+
+  - id: proj_fh_012
+    name: Respiratory Illness Surveillance System
+    description: >
+      Near-real-time ED and GP visit data aggregation for respiratory illness
+      surveillance. Feeds BC CDC dashboard. Weekly reporting deadline to BCCDC.
+    team: team_data_analytics
+    task_count: 7
+    milestones: [ms_fh_012_a]
+    schedule_health: 0.84
+    open_blockers: 0
+    dependencies: [proj_fh_010]
+    budget_cad: 110000
+
+  # --- Program Office ---
+  - id: proj_fh_013
+    name: FOIPPA Compliance Audit — EHR Data Flows
+    description: >
+      Mandated FOIPPA privacy audit of all EHR data flows. Must be complete
+      by March 15, 2026 to satisfy BC Privacy Commissioner request.
+      Findings feed directly into proj_fh_003 and proj_fh_006 governance.
+    team: team_program_office
+    task_count: 9
+    milestones: [ms_fh_013_a]
+    schedule_health: 0.55
+    open_blockers: 2
+    dependencies: [proj_fh_003, proj_fh_006]
+    regulatory_mandate: true
+    mandate_deadline_day: 15
+    budget_cad: 85000
+
+  - id: proj_fh_014
+    name: Vendor Performance Review — Epic & Sectra
+    description: >
+      Annual SLA review for Epic Systems and Sectra AB contracts.
+      Contract renewal decisions due by February 28, 2026.
+    team: team_program_office
+    task_count: 6
+    milestones: [ms_fh_014_a]
+    schedule_health: 0.90
+    open_blockers: 0
+    dependencies: []
+    budget_cad: 30000
+
+  - id: proj_fh_015
+    name: Staff Digital Literacy Training — Wave 2
+    description: >
+      Required training for 1,200 clinical staff on Epic EHR Phase 3 workflows.
+      Must precede proj_fh_003 go-live. Contracted to Fraser Health Learning Institute.
+    team: team_program_office
+    task_count: 8
+    milestones: [ms_fh_015_a, ms_fh_015_b]
+    schedule_health: 0.76
+    open_blockers: 1
+    dependencies: [proj_fh_003]
+    budget_cad: 120000
+
+# ---- Milestones (14) ----
+milestones:
+  - id: ms_fh_001_a
+    project_id: proj_fh_001
+    name: FHIR R4 API — Internal Sandbox Complete
+    due_days_from_start: 10
+    status: at_risk
+    risk_reason: >
+      PharmaNet credential setup delayed — BC Ministry of Health ticket pending.
+      Two development blockers open for 5+ days without response.
+
+  - id: ms_fh_001_b
+    project_id: proj_fh_001
+    name: FHIR R4 API — Production Go-Live (Mandate Deadline)
+    due_days_from_start: 28
+    status: at_risk
+    risk_reason: >
+      Mandate deadline March 31 aligns with day 30 of simulation.
+      Sandbox delays put production go-live at risk.
+
+  - id: ms_fh_002_a
+    project_id: proj_fh_002
+    name: MyHealth FH — Beta Launch (Staff Testing)
+    due_days_from_start: 16
+    status: at_risk
+    risk_reason: Blocked on FHIR API (proj_fh_001) sandbox completion.
+
+  - id: ms_fh_002_b
+    project_id: proj_fh_002
+    name: MyHealth FH — Patient-Facing Launch
+    due_days_from_start: 29
+    status: on_track
+
+  - id: ms_fh_003_a
+    project_id: proj_fh_003
+    name: Epic Pharmacy Integration — Dev Complete
+    due_days_from_start: 8
+    status: at_risk
+    risk_reason: PharmaNet BC API rate limit issue unresolved. Vendor ticket escalated.
+
+  - id: ms_fh_003_b
+    project_id: proj_fh_003
+    name: Epic Pharmacy Integration — UAT Sign-off
+    due_days_from_start: 20
+    status: on_track
+
+  - id: ms_fh_003_c
+    project_id: proj_fh_003
+    name: Epic Pharmacy Integration — Clinical Go-Live
+    due_days_from_start: 28
+    status: on_track
+
+  - id: ms_fh_005_a
+    project_id: proj_fh_005
+    name: PACS Upgrade — Surrey Memorial & Burnaby General
+    due_days_from_start: 12
+    status: delayed
+    risk_reason: >
+      Sectra AB remote engineer travel visa delayed. On-site installation
+      required for hardware replacement. Cannot proceed remotely.
+
+  - id: ms_fh_005_b
+    project_id: proj_fh_005
+    name: PACS Upgrade — Remaining 3 Sites
+    due_days_from_start: 26
+    status: at_risk
+    risk_reason: Cascade from ms_fh_005_a delay.
+
+  - id: ms_fh_006_a
+    project_id: proj_fh_006
+    name: Azure Migration — Wave 1 (Non-Clinical Workloads)
+    due_days_from_start: 14
+    status: at_risk
+    risk_reason: Health Data Platform (proj_fh_010) dev environment not ready.
+
+  - id: ms_fh_010_a
+    project_id: proj_fh_010
+    name: Health Data Platform — Dev Environment Ready
+    due_days_from_start: 7
+    status: delayed
+    risk_reason: >
+      Azure subscription quota increase request pending. 3 projects blocked
+      (proj_fh_002, proj_fh_006, proj_fh_008) on this milestone.
+
+  - id: ms_fh_010_b
+    project_id: proj_fh_010
+    name: Health Data Platform — Production Ingestion Live
+    due_days_from_start: 22
+    status: on_track
+
+  - id: ms_fh_013_a
+    project_id: proj_fh_013
+    name: FOIPPA Audit — Findings Report to BC Privacy Commissioner
+    due_days_from_start: 15
+    status: at_risk
+    risk_reason: >
+      Two EHR data flow diagrams missing from audit package.
+      Team waiting on proj_fh_003 technical lead for documentation.
+      Hard regulatory deadline — no extension available.
+
+  - id: ms_fh_014_a
+    project_id: proj_fh_014
+    name: Vendor Contract Renewal Decision — Epic & Sectra
+    due_days_from_start: 28
+    status: on_track
+
+# ---- Simulated Usage Events (30-Day Timeline) ----
+# Maps to the user_personas above. Each event represents a platform interaction.
+# This section feeds the data seeder to generate realistic evaluation data.
+usage_timeline:
+
+  # WEEK 1 — Days 1–7
+
+  - day: 1
+    user: user_sarah_chen
+    action: task_status_check
+    project: proj_fh_001
+    event_type: task.updated
+    context: >
+      Sarah reviews morning status — PharmaNet credential task still blocked.
+      No update from Ministry of Health in 3 days. Flags for Raj.
+
+  - day: 1
+    user: user_raj_patel
+    action: risk_review
+    project: proj_fh_003
+    event_type: risk.detected
+    context: >
+      Raj reviews Epic pharmacy integration — PharmaNet BC rate limit issue
+      affects both proj_fh_001 and proj_fh_003. Single point of failure.
+
+  - day: 2
+    user: user_dr_morrison
+    action: dependency_review
+    project: proj_fh_006
+    event_type: dependency.blocked
+    context: >
+      Linda discovers proj_fh_006 (Azure migration) cannot start Wave 1
+      until Health Data Platform (proj_fh_010) dev environment is ready.
+      Day 7 milestone at risk. Escalates to Michael.
+
+  - day: 2
+    user: user_michael_okafor
+    action: portfolio_review
+    project: all
+    event_type: milestone.updated
+    context: >
+      Michael reviews portfolio dashboard. 6 of 15 projects show at_risk
+      or delayed milestones. Requests decision prep briefs for top 3 risks.
+
+  - day: 3
+    user: user_sarah_chen
+    action: blocker_escalation
+    project: proj_fh_001
+    event_type: dependency.blocked
+    context: >
+      Sarah formally escalates PharmaNet credential blocker.
+      FHIR API sandbox milestone (Day 10) now at serious risk.
+      Ministry of Health has not responded in 4 business days.
+
+  - day: 3
+    user: user_raj_patel
+    action: vendor_issue
+    project: proj_fh_005
+    event_type: dependency.blocked
+    context: >
+      Raj escalates Sectra AB visa issue — PACS upgrade hardware installation
+      cannot proceed. Vendor SLA breach risk. Surrey Memorial and Burnaby
+      General sites blocked for 8+ days.
+
+  - day: 4
+    user: user_dr_morrison
+    action: capacity_review
+    project: proj_fh_006
+    event_type: task.updated
+    context: >
+      Linda discovers team_infrastructure is at 140% capacity.
+      Azure migration (proj_fh_006) and Zero Trust (proj_fh_007) both
+      require network engineers simultaneously from Day 5–12.
+
+  - day: 5
+    user: user_michael_okafor
+    action: executive_brief_review
+    project: proj_fh_005
+    event_type: milestone.updated
+    context: >
+      Michael receives Communication Agent brief on PACS delay.
+      Approves escalation to Sectra AB account manager.
+      Sets 48-hour response SLA.
+
+  - day: 6
+    user: user_sarah_chen
+    action: task_update
+    project: proj_fh_002
+    event_type: task.updated
+    context: >
+      Sarah updates MyHealth FH portal tasks — BC Services Card
+      authentication integration complete. FHIR API dependency still pending.
+
+  - day: 7
+    user: user_raj_patel
+    action: foippa_flag
+    project: proj_fh_013
+    event_type: risk.detected
+    context: >
+      Raj flags missing EHR data flow diagrams for FOIPPA audit.
+      Regulatory deadline Day 15. Documentation from Epic integration
+      team not yet available. 8 days to hard deadline.
+
+  # WEEK 2 — Days 8–14
+
+  - day: 8
+    user: user_dr_morrison
+    action: capacity_arbitration
+    project: proj_fh_007
+    event_type: dependency.blocked
+    context: >
+      Linda must decide: pause Zero Trust network refresh (proj_fh_007)
+      to free network engineers for Azure migration (proj_fh_006)?
+      Both projects have firm commitments. Requests Program Director arbitration.
+
+  - day: 8
+    user: user_michael_okafor
+    action: scope_review
+    project: proj_fh_004
+    event_type: risk.detected
+    context: >
+      Michael reviews sepsis alert project — physician champion (Dr. Tan)
+      submitted 3 new alert criteria requirements not in original scope.
+      No formal change request. Silent scope creep signal with low confidence.
+
+  - day: 9
+    user: user_sarah_chen
+    action: status_report
+    project: proj_fh_001
+    event_type: milestone.updated
+    context: >
+      Sarah prepares weekly status report. FHIR API Day-10 milestone
+      will be missed. PharmaNet credentials still pending.
+      Forecasts 5-day delay.
+
+  - day: 10
+    user: user_raj_patel
+    action: go_nogo_decision
+    project: proj_fh_003
+    event_type: milestone.updated
+    context: >
+      Epic pharmacy integration dev complete milestone reached — BUT
+      PharmaNet rate limit workaround not approved by Health Canada.
+      Raj requests go/no-go decision from medical leadership.
+
+  - day: 11
+    user: user_dr_morrison
+    action: azure_quota_resolution
+    project: proj_fh_010
+    event_type: task.updated
+    context: >
+      Linda confirms Azure subscription quota increase approved (4 days late).
+      Health Data Platform dev environment ready. Unblocks proj_fh_002,
+      proj_fh_006, and proj_fh_008.
+
+  - day: 12
+    user: user_michael_okafor
+    action: vendor_escalation
+    project: proj_fh_005
+    event_type: dependency.blocked
+    context: >
+      Sectra AB responds: engineer visa now approved, earliest arrival Day 16.
+      PACS Surrey Memorial milestone moved from Day 12 to Day 18.
+      Michael formally notifies hospital COO.
+
+  - day: 13
+    user: user_sarah_chen
+    action: integration_test
+    project: proj_fh_001
+    event_type: task.updated
+    context: >
+      FHIR API team completes internal integration test with PharmaNet sandbox.
+      PharmaNet production credentials received Day 12 (Ministry unblocked).
+      Sandbox milestone achieved 3 days late.
+
+  - day: 14
+    user: user_raj_patel
+    action: training_delay
+    project: proj_fh_015
+    event_type: risk.detected
+    context: >
+      Staff training Wave 2 enrollment 40% below target. Clinical staff
+      released by ward managers at lower rate than plan assumed.
+      Threatens proj_fh_003 go-live (Day 28).
+
+  # WEEK 3 — Days 15–21
+
+  - day: 15
+    user: user_dr_morrison
+    action: foippa_submission
+    project: proj_fh_013
+    event_type: milestone.updated
+    context: >
+      FOIPPA audit report submitted to BC Privacy Commissioner on deadline.
+      Two data flow diagrams added at last minute by Raj's team.
+      Milestone met — but 3 minor findings require remediation by Day 28.
+
+  - day: 15
+    user: user_michael_okafor
+    action: compliance_review
+    project: proj_fh_013
+    event_type: risk.detected
+    context: >
+      Michael reviews FOIPPA audit findings. Finding 2 affects proj_fh_003:
+      patient medication consent flow needs redesign before Epic go-live.
+      This is a patient safety and legal compliance issue.
+
+  - day: 16
+    user: user_raj_patel
+    action: sectra_arrival
+    project: proj_fh_005
+    event_type: task.updated
+    context: >
+      Sectra AB engineer arrives. PACS installation at Surrey Memorial begins.
+      Estimated 3 days per site. Remaining 4 days of slack in schedule.
+
+  - day: 17
+    user: user_sarah_chen
+    action: portal_beta
+    project: proj_fh_002
+    event_type: milestone.updated
+    context: >
+      MyHealth FH portal beta launch for staff testing — 1 day late but
+      within acceptable variance. 47 staff testers enrolled.
+
+  - day: 18
+    user: user_dr_morrison
+    action: zero_trust_restart
+    project: proj_fh_007
+    event_type: task.updated
+    context: >
+      Azure migration Wave 1 complete. Linda restarts Zero Trust network
+      refresh at Abbotsford. Network engineers redeployed from proj_fh_006.
+
+  - day: 19
+    user: user_michael_okafor
+    action: portfolio_health_review
+    project: all
+    event_type: task.updated
+    context: >
+      Mid-month portfolio review. 3 projects still at risk.
+      FOIPPA Finding 2 remediation creates new risk for Epic go-live.
+      Michael requests updated risk register from all PMs.
+
+  - day: 20
+    user: user_raj_patel
+    action: epic_uat
+    project: proj_fh_003
+    event_type: milestone.updated
+    context: >
+      Epic pharmacy UAT begins with 8 clinical pharmacists.
+      FOIPPA Finding 2 consent redesign complete — approved by medical ethics board.
+      UAT on track.
+
+  - day: 21
+    user: user_sarah_chen
+    action: device_connectivity_support
+    project: proj_fh_009
+    event_type: dependency.blocked
+    context: >
+      Philips HL7v2 adapter requires FHIR API (proj_fh_001) production endpoint.
+      FHIR production endpoint not yet live. Device connectivity blocked.
+
+  # WEEK 4 — Days 22–30
+
+  - day: 22
+    user: user_dr_morrison
+    action: cloud_wave2_start
+    project: proj_fh_006
+    event_type: milestone.updated
+    context: >
+      Azure Migration Wave 2 (clinical workloads) begins.
+      Health Data Platform production ingestion live (milestone met).
+      Linda approves clinical workload migration schedule.
+
+  - day: 23
+    user: user_raj_patel
+    action: pacs_completion
+    project: proj_fh_005
+    event_type: milestone.updated
+    context: >
+      PACS upgrade complete at Surrey Memorial and Burnaby General.
+      Sectra engineer proceeds to Chilliwack General.
+      Remaining 3 sites on track for Day 26.
+
+  - day: 24
+    user: user_michael_okafor
+    action: vendor_renewal
+    project: proj_fh_014
+    event_type: milestone.updated
+    context: >
+      Vendor performance review complete. Epic contract renewal recommended
+      with 3 performance improvement clauses. Sectra AB contract on hold
+      pending formal SLA breach assessment for visa delay.
+
+  - day: 25
+    user: user_sarah_chen
+    action: fhir_production
+    project: proj_fh_001
+    event_type: milestone.updated
+    context: >
+      FHIR R4 API production endpoint live — 3 days ahead of mandate deadline.
+      Patient Portal and Device Connectivity now unblocked.
+      Sarah closes 5 tasks and escalates final security review.
+
+  - day: 26
+    user: user_raj_patel
+    action: training_shortfall
+    project: proj_fh_015
+    event_type: risk.detected
+    context: >
+      Training completion at 65% — target was 85% before Epic go-live.
+      Raj escalates: proceed with go-live at 65% completion or delay?
+      Patient safety concern: untrained staff may misuse medication alert workflows.
+
+  - day: 26
+    user: user_dr_morrison
+    action: capacity_warning
+    project: proj_fh_006
+    event_type: task.updated
+    context: >
+      team_infrastructure approaching end-of-sprint capacity.
+      Azure Migration Wave 2 + Zero Trust final testing overlapping.
+      Risk: quality testing shortcuts under time pressure.
+
+  - day: 27
+    user: user_michael_okafor
+    action: go_live_decision
+    project: proj_fh_003
+    event_type: milestone.updated
+    context: >
+      Michael chairs go/no-go meeting for Epic pharmacy go-live.
+      Decision: proceed with training at 65% given patient safety upside.
+      Additional floor support for 2 weeks post-go-live approved.
+
+  - day: 28
+    user: user_raj_patel
+    action: epic_golive
+    project: proj_fh_003
+    event_type: milestone.updated
+    context: >
+      Epic EHR Pharmacy Integration go-live at Surrey Memorial and
+      Burnaby General. Monitoring: 24/7 clinical command centre for 48 hours.
+      Initial medication alert rates within expected range.
+
+  - day: 29
+    user: user_sarah_chen
+    action: patient_portal_launch
+    project: proj_fh_002
+    event_type: milestone.updated
+    context: >
+      MyHealth FH patient portal public launch. 2,100 patient registrations
+      in first 4 hours. FHIR API load within capacity.
+      Minor: PharmaNet refill integration has 2% error rate — monitoring.
+
+  - day: 30
+    user: user_michael_okafor
+    action: month_end_review
+    project: all
+    event_type: task.updated
+    context: >
+      Month-end portfolio review. 12/15 projects on track or complete.
+      3 projects with minor residual risks. FOIPPA mandate met.
+      Epic go-live successful. PACS 4/5 sites complete (Day 32 for last site).
+      Mandate deadline met. Board report prepared by Communication Agent.
+
+# ---- Injected Failures (12 total across 30 days) ----
+injected_failures:
+
+  # Failure 1 — Regulatory deadline cascade: PharmaNet credentials blocking 3 projects
+  - id: inj_fh_001
+    type: dependency_failure
+    trigger_day: 3
+    source_project: proj_fh_001
+    blocked_projects: [proj_fh_002, proj_fh_009]
+    description: >
+      PharmaNet BC credential access request submitted January 15 not approved.
+      BC Ministry of Health internal queue backlog: 8–12 business days.
+      Blocks FHIR API sandbox (Day 10 milestone), MyHealth FH beta (Day 16),
+      and Philips device connectivity (proj_fh_009).
+    severity: 0.78
+    expected_detection: risk_intelligence
+    expected_event_type: dependency.blocked
+    regulatory_context: BC Ministry of Health approval required
+    user_persona: user_sarah_chen
+
+  # Failure 2 — Vendor visa failure: Sectra AB engineer cannot enter Canada
+  - id: inj_fh_002
+    type: critical_blocker
+    trigger_day: 3
+    project_id: proj_fh_005
+    task_id: sectra_onsite_installation
+    description: >
+      Sectra AB (Sweden) lead engineer visa application rejected first attempt.
+      On-site hardware installation physically required — cannot be done remotely.
+      Surrey Memorial and Burnaby General PACS hardware sitting in receiving.
+      SLA breach imminent: contract requires installation within 90 days of delivery.
+    severity: 0.82
+    days_late: 8
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+    vendor: Sectra_AB
+    user_persona: user_raj_patel
+
+  # Failure 3 — Capacity overload: team_infrastructure double-booked Day 5–12
+  - id: inj_fh_003
+    type: capacity_overload
+    trigger_day: 4
+    team_id: team_infrastructure
+    affected_projects: [proj_fh_006, proj_fh_007]
+    overload_factor: 1.40
+    description: >
+      Azure cloud migration (proj_fh_006) and Zero Trust network refresh
+      (proj_fh_007) both require the same 3 senior network engineers
+      during Days 5–12. One engineer on leave (approved prior to project).
+      Total: 7 tasks requiring 3 people who collectively have capacity for 5.
+    expected_detection: execution_monitoring
+    expected_event_type: task.updated
+    user_persona: user_dr_morrison
+
+  # Failure 4 — Azure quota blocking 4 downstream projects
+  - id: inj_fh_004
+    type: dependency_failure
+    trigger_day: 2
+    source_project: proj_fh_010
+    blocked_projects: [proj_fh_002, proj_fh_006, proj_fh_008]
+    description: >
+      Azure subscription vCPU quota for Canada East region insufficient.
+      Request submitted 3 weeks ago — no response from Microsoft Enterprise.
+      Health Data Platform dev environment cannot be provisioned.
+      4 downstream projects cannot access dev environments.
+    severity: 0.71
+    expected_detection: risk_intelligence
+    expected_event_type: dependency.blocked
+    user_persona: user_dr_morrison
+
+  # Failure 5 — Silent scope creep: physician adds requirements to sepsis alerts
+  - id: inj_fh_005
+    type: scope_creep
+    trigger_day: 8
+    project_id: proj_fh_004
+    description: >
+      Dr. Kevin Tan (physician champion) verbally requested 3 new sepsis alert
+      criteria during informal hallway conversation with Epic developer.
+      Requirements captured in personal notes — not in Epic change control.
+      Signal confidence: 0.31 (single source, unconfirmed, 48 hours old).
+      Could add 2–3 weeks if formalized as scope change.
+    signal_confidence: 0.31
+    expected_detection: risk_intelligence
+    expected_event_type: risk.detected
+    patient_safety: true
+    user_persona: user_michael_okafor
+
+  # Failure 6 — FOIPPA compliance risk: missing documentation for regulatory audit
+  - id: inj_fh_006
+    type: scope_creep
+    trigger_day: 7
+    project_id: proj_fh_013
+    description: >
+      FOIPPA audit team discovered two EHR data flow diagrams covering
+      medication consent workflow are missing from audit documentation package.
+      Regulatory deadline is Day 15 — 8 days away.
+      Signal has medium confidence: discovered via internal SharePoint audit trail.
+      Filing late is not an option (Privacy Commissioner formal request).
+    signal_confidence: 0.72
+    expected_detection: risk_intelligence
+    expected_event_type: risk.detected
+    regulatory_risk: true
+    user_persona: user_raj_patel
+
+  # Failure 7 — Staff training shortfall threatens patient safety go-live
+  - id: inj_fh_007
+    type: scope_creep
+    trigger_day: 14
+    project_id: proj_fh_015
+    description: >
+      Clinical staff training enrollment 40% below projection.
+      Ward managers releasing fewer staff for training sessions than agreed.
+      Root cause: unexpected high patient census at 3 acute sites (flu season).
+      No formal escalation submitted — only informal emails from training coordinator.
+      Signal confidence: 0.45 (indirect, multi-source, 72 hours old).
+    signal_confidence: 0.45
+    expected_detection: risk_intelligence
+    expected_event_type: risk.detected
+    patient_safety: true
+    user_persona: user_raj_patel
+
+  # Failure 8 — Dependency cascade: FOIPPA Finding 2 blocks Epic go-live
+  - id: inj_fh_008
+    type: dependency_failure
+    trigger_day: 15
+    source_project: proj_fh_013
+    blocked_projects: [proj_fh_003]
+    description: >
+      FOIPPA audit Finding 2: Epic pharmacy integration medication consent flow
+      does not meet BC Privacy Act requirements for patient data secondary use.
+      Remediation required before go-live — adds ~5 days of rework.
+      Blocks Epic go-live milestone (Day 28).
+    severity: 0.88
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+    regulatory_context: BC FOIPPA compliance
+    patient_safety: true
+    user_persona: user_michael_okafor
+
+  # Failure 9 — Late-surfacing critical blocker: Philips HL7v2 adapter incompatibility
+  - id: inj_fh_009
+    type: critical_blocker
+    trigger_day: 21
+    project_id: proj_fh_009
+    task_id: philips_adapter_integration
+    description: >
+      Philips HL7v2 adapter version 2.1 (installed at Langley Memorial) incompatible
+      with FHIR R4 API production endpoint. Issue only discovered when FHIR
+      production went live (Day 25). Adapter requires firmware update requiring
+      Philips field engineer visit. Lead time: 7–10 business days.
+    severity: 0.76
+    days_late: 4
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+    vendor: Philips_Healthcare
+    user_persona: user_sarah_chen
+
+  # Failure 10 — Capacity overload: end-of-month crunch
+  - id: inj_fh_010
+    type: capacity_overload
+    trigger_day: 26
+    team_id: team_infrastructure
+    affected_projects: [proj_fh_006, proj_fh_007]
+    overload_factor: 1.35
+    description: >
+      Azure Migration Wave 2 testing and Zero Trust final acceptance testing
+      require same security architect for sign-off. Both have Day 28/29 deadlines.
+      Risk: security review shortcuts under end-of-month executive pressure.
+    expected_detection: execution_monitoring
+    expected_event_type: task.updated
+    user_persona: user_dr_morrison
+
+  # Failure 11 — Dependency failure: Epic go-live blocked by training shortfall
+  - id: inj_fh_011
+    type: dependency_failure
+    trigger_day: 26
+    source_project: proj_fh_015
+    blocked_projects: [proj_fh_003]
+    description: >
+      Training completion at 65% (target: 85%). Medical leadership debate:
+      proceed at 65% with extra floor support, or delay Epic go-live 1 week?
+      Patient safety risk either way (untrained staff vs. delayed medication alerts).
+      Decision escalated to Chief Medical Officer and Director PMO.
+    severity: 0.91
+    expected_detection: risk_intelligence
+    expected_event_type: dependency.blocked
+    patient_safety: true
+    user_persona: user_michael_okafor
+
+  # Failure 12 — Vendor SLA breach: Sectra AB formal breach notice
+  - id: inj_fh_012
+    type: critical_blocker
+    trigger_day: 12
+    project_id: proj_fh_014
+    task_id: sectra_sla_assessment
+    description: >
+      Sectra AB PACS installation SLA breached: hardware delivered Day -15,
+      installation not started until Day 16 (31-day delay vs 10-day SLA).
+      Vendor performance review team raises formal breach notice.
+      Contract allows penalty clause: 15% contract value reduction.
+      Vendor relations risk: Sectra is sole-source for PACS at Fraser Health.
+    severity: 0.67
+    days_late: 21
+    expected_detection: issue_management
+    expected_event_type: dependency.blocked
+    vendor: Sectra_AB
+    user_persona: user_michael_okafor
+
+# ---- Detection targets ----
+detection_targets:
+  risk_intelligence:
+    precision: 0.80
+    recall: 0.70
+    false_positive_rate: 0.15
+    time_to_detection_hours: 24
+  issue_management:
+    precision: 0.85
+    false_positive_rate: 0.10
+    time_to_detection_hours: 12
+  execution_monitoring:
+    precision: 0.75
+    false_positive_rate: 0.15
+
+# ---- 30-Day Evaluation Calibration Settings ----
+# These settings configure the FeedbackLabeler and MetricsTracker
+# for the calibration loop's first 30-day cycle.
+evaluation_config:
+  window_days: 30
+  over_trust_threshold: 0.95
+
+  # Expected acceptance rates per persona (realistic — not rubber-stamping)
+  persona_acceptance_targets:
+    user_sarah_chen: 0.87     # Project coordinator: mostly accepts, occasionally edits
+    user_raj_patel: 0.79      # PM: reviews carefully, edits ~20%
+    user_dr_morrison: 0.82    # Senior PM: high quality reviews, some edits
+    user_michael_okafor: 0.91  # Director: accepts most executive briefs, edits tone
+
+  # Calibration thresholds for this deployment
+  calibration_targets:
+    risk_escalation_threshold: 0.40
+    critical_issue_threshold: 0.70
+    confidence_disclosure_threshold: 0.65
