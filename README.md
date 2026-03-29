@@ -25,16 +25,18 @@ This is decision preparation, not automation. Agents observe, synthesize, and re
 | Layer | Tool |
 |---|---|
 | Agent orchestration | LangGraph |
-| LLM | Claude claude-sonnet-4-20250514 via Anthropic API |
-| Integrations | Jira REST API · Smartsheet API · GitHub API · Slack API |
-| Canonical state store | PostgreSQL + pgvector |
-| Knowledge graph | Neo4j (local) or Amazon Neptune (cloud) |
+| LLM | Ollama (local dev) · Groq free tier (demo) · Gemini Flash (backup) · Anthropic (optional paid upgrade) |
+| Integrations | GitHub Issues API (replaces Jira) · Google Sheets API (replaces Smartsheet) · GitHub velocity |
+| Canonical state store | SQLite + sqlite-vec (embedded, file-based — no server) |
+| Knowledge graph | Kuzu (embedded, file-based, Cypher-compatible — no server) |
 | Event bus | Redis Streams (Phase 1) → Kafka (Phase 2+) |
 | Policy engine | Custom Python rule engine (YAML-configured) |
 | Demo UI | Streamlit (Phase 1) → Next.js (Phase 2) |
-| Auth + scheduling | Supabase + APScheduler |
+| Auth + scheduling | FastAPI JWT (replaces Supabase) · APScheduler |
 
-Python 3.11+. Docker required for local infrastructure.
+**Total infrastructure cost: $0.** Docker runs Redis only. SQLite and Kuzu are both file-based — no DB servers, no ports.
+
+Python 3.11+. Docker required for Redis only.
 
 ---
 
@@ -76,7 +78,7 @@ autonomous-pmo/
 │   ├── graph_neighborhood.py # 2-hop graph context retrieval
 │   └── case_matcher.py       # Historical case retrieval (top-3 match)
 ├── knowledge_graph/
-│   ├── graph_store.py        # Neo4j read/write operations
+│   ├── graph_store.py        # Kuzu embedded graph store (no Docker, no server)
 │   ├── entity_extractor.py   # Entity extraction from signals
 │   ├── relationship_builder.py
 │   ├── query_service.py      # Cypher query patterns
@@ -87,10 +89,9 @@ autonomous-pmo/
 │   ├── consumers/            # Agent event consumers
 │   └── schemas/              # Event type definitions
 ├── integrations/
-│   ├── jira/                 # Jira REST API adapter
-│   ├── github/               # GitHub API adapter
-│   ├── slack/                # Slack Events API adapter
-│   └── smartsheet/           # Smartsheet API adapter
+│   ├── github_issues/        # GitHub Issues adapter + poller (replaces Jira — free)
+│   ├── github/               # GitHub velocity adapter (commit frequency tracking)
+│   └── google_sheets/        # Google Sheets adapter + poller (replaces Smartsheet — free)
 ├── evaluation/
 │   ├── metrics.py            # Precision, recall, acceptance rate, edit rate
 │   ├── calibration.py        # Threshold tuning and calibration loop
@@ -116,7 +117,16 @@ autonomous-pmo/
 │   ├── integration/          # Agent + Policy + State interactions
 │   ├── policy/               # All policy outcomes for all action types
 │   └── simulation/           # End-to-end delivery scenario playback
+├── docs/
+│   ├── prompts/              # Agent prompt templates (7 files — one per agent)
+│   ├── design/               # Architecture design documents
+│   └── final_audit_report.md # T-092 audit: 0 findings across 5 categories
+├── scripts/
+│   ├── setup_local_ai.sh     # Ollama install + model pull
+│   ├── compress_context.sh   # Context compression helper
+│   └── validate_local_ai.sh  # Local AI health check
 ├── CLAUDE.md                 # Claude Code project context
+├── FREE_STACK.md             # Zero-cost build guide (all components)
 └── README.md
 ```
 
@@ -127,9 +137,9 @@ autonomous-pmo/
 ### Prerequisites
 
 - Python 3.11+
-- Docker and Docker Compose
-- Anthropic API key
-- At least one integration credential (Jira or Smartsheet for Phase 1)
+- Docker and Docker Compose (Redis only — no PostgreSQL, no Neo4j containers)
+- No paid APIs required for local dev — Ollama runs LLMs locally for free
+- Optional: GitHub personal access token (free), Google service account (free)
 
 ### Install
 
@@ -145,16 +155,24 @@ cp .env.example .env   # Add your API keys here
 
 ```bash
 docker compose up -d
-# Starts: PostgreSQL, Redis, Neo4j
+# Starts: Redis only — SQLite and Kuzu are file-based, no containers needed
+```
+
+### Setup Local LLM (Optional — skip if using Groq/Gemini)
+
+```bash
+bash scripts/setup_local_ai.sh
+# Installs Ollama and pulls llama3.1:8b for development
 ```
 
 ### Bootstrap Integrations
 
 ```bash
-python -m integrations.jira.bootstrap
-python -m integrations.github.bootstrap
-python -m integrations.slack.bootstrap
-python -m integrations.smartsheet.bootstrap
+# GitHub Issues (replaces Jira — free with personal access token)
+python -m integrations.github_issues.bootstrap
+
+# Google Sheets (replaces Smartsheet — free with service account)
+# Set GOOGLE_SERVICE_ACCOUNT_PATH and GOOGLE_SPREADSHEET_ID in .env first
 ```
 
 ### Load Policies
@@ -213,27 +231,41 @@ python -m policy.engine --reload
 ## Environment Variables
 
 ```bash
-# Required
-ANTHROPIC_API_KEY=          # Anthropic API key for all LLM calls
-DATABASE_URL=               # PostgreSQL connection string
-REDIS_URL=                  # Redis connection string
-NEO4J_URI=                  # Neo4j bolt URI
-NEO4J_USER=
-NEO4J_PASSWORD=
+# LLM Provider — options: ollama | groq | gemini | anthropic
+# Default: ollama (no API key, runs locally)
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434/v1
 
-# Integrations (add what you have)
-JIRA_BASE_URL=
-JIRA_API_TOKEN=
-JIRA_USER_EMAIL=
-GITHUB_TOKEN=
-SLACK_BOT_TOKEN=
-SLACK_SIGNING_SECRET=
-SMARTSHEET_ACCESS_TOKEN=
+# Free tier demo options (no credit card for initial usage)
+GROQ_API_KEY=               # https://console.groq.com — free tier
+GEMINI_API_KEY=             # Google AI Studio — free tier
 
-# Optional
+# Optional paid upgrade only
+ANTHROPIC_API_KEY=
+
+# Database (SQLite — file-based, no server)
+SQLITE_DB_PATH=./data/autonomous_pmo.db
+
+# Knowledge graph (Kuzu — embedded, no server)
+KUZU_DB_PATH=./data/knowledge_graph
+
+# Event bus (Redis — only Docker service)
+REDIS_URL=redis://localhost:6379
+
+# Integrations (free)
+GITHUB_TOKEN=               # Personal access token — free
+GITHUB_ORG=
+GOOGLE_SERVICE_ACCOUNT_PATH=./credentials/google_service_account.json
+GOOGLE_SPREADSHEET_ID=
+GOOGLE_SHEET_RANGE=Sheet1!A1:Z1000
+
+# Auth (FastAPI JWT)
+JWT_SECRET_KEY=             # Generate: openssl rand -hex 32
+
+# Logging
 LOG_LEVEL=INFO              # DEBUG | INFO | WARNING | ERROR
 ENVIRONMENT=development     # development | staging | production
-TENANT_ID=default           # Override for multi-tenant deployments
+TENANT_ID=default
 ```
 
 Never hardcode credentials. All secrets must load from environment variables or a secrets manager.
@@ -338,9 +370,10 @@ Raw Signal
 
 | Source | High Confidence Window | Decay Trigger |
 |---|---|---|
-| Jira task status | 24 hours | No update in 48 hours |
+| GitHub Issues status | 24 hours | No update in 48 hours |
+| Google Sheets row | 24 hours | No update in 48 hours |
 | GitHub velocity | 72 hours | No commit in 5 days |
-| Slack discussion | 4 hours | Thread older than 24 hours |
+| Slack / Discord discussion | 4 hours | Thread older than 24 hours |
 | Meeting notes | 48 hours | No action item follow-up in 72 hours |
 | Manual status report | 7 days | Next reporting cycle overdue |
 
@@ -517,15 +550,18 @@ Audit records are append-only. Retention defaults: audit logs 12 months, state h
 
 The minimum viable demo: one complete end-to-end workflow running against a real or synthetic data source.
 
-**Target:** Connect Jira or Smartsheet → blocked task detected → Risk Intelligence Agent scores milestone impact → Communication Agent produces a decision preparation brief → Policy Engine routes for approval → Human approves → Audit log captured. End-to-end in under 2 minutes.
+**Target:** Connect GitHub Issues or Google Sheets → blocked task detected → Risk Intelligence Agent scores milestone impact → Communication Agent produces a decision preparation brief → Policy Engine routes for approval → Human approves → Audit log captured. End-to-end in under 2 minutes. **No paid APIs required.**
 
-| Phase | Duration | Deliverable |
+| Phase | Status | Deliverable |
 |---|---|---|
-| 1A — Core pipeline | Week 1–2 | Jira ingestion → Signal Quality Pipeline → Canonical State → Execution Monitoring Agent → health score output |
-| 1B — Intelligence layer | Week 3–4 | Risk Intelligence + Issue Management live · Program Director conflict resolution · Policy Engine routing |
-| 1C — Demo ready | Week 5 | Communication Agent producing styled briefs · Streamlit UI · end-to-end demo script validated |
-| 2 — Graph + learning | Month 2 | Knowledge graph online · Context Assembly Layer · Knowledge Agent · Evaluation calibration loop |
-| 3 — Enterprise hardening | Month 3 | Failure mode handling · Cost controls · RBAC · Audit logging · Additional integrations |
+| 0–1 — Scaffold + contracts | **Complete** | Directory skeleton, all data contracts, mock LLM client |
+| 2–3 — Infrastructure + policy | **Complete** | SQLite state store, signal quality pipeline, policy engine (fail-closed) |
+| 4–5 — Context + security | **Complete** | Context assembly (sqlite-vec), FastAPI JWT auth, audit logger (append-only) |
+| 6 — Agents | **Complete** | All 7 agents implemented, 35+ unit tests green, cross-import boundary enforced |
+| 7–8 — Orchestrator + adapters | **Complete** | 7-node LangGraph, GitHub Issues + Google Sheets adapters, human review queue |
+| 9–10 — Simulation + graph | **Complete** | Kuzu knowledge graph online, simulation harness, program_alpha scenario |
+| 11–12 — Evaluation + UI | **Complete** | 8-metric evaluation framework, Streamlit UI (4 views), full test suite passing |
+| Enterprise hardening | Roadmap | Kafka migration, Next.js UI, RBAC enforcement, load testing |
 
 ---
 
